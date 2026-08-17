@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 import httpx
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import create_engine, text
 
@@ -141,6 +141,13 @@ app=FastAPI(lifespan=lifespan)
 
 @app.get('/',response_class=HTMLResponse)
 def home(request:Request): return templates.TemplateResponse('index.html',{'request':request})
+
+@app.get('/scan-now')
+async def scan_now():
+    result=await perform_scan()
+    if result.get('ok'):
+        return RedirectResponse(url=f"/?scan=ok&events={result.get('events',0)}&surebets={result.get('surebets',0)}",status_code=303)
+    return RedirectResponse(url='/?scan=error',status_code=303)
 
 @app.get('/health')
 def health():
